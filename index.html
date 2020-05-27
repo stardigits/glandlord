@@ -4,6 +4,7 @@
     <title>gLandlord</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="google-signin-client_id" content="960134249629-mtcvqn233uaeuuvjg1qomkqf835fhdcp.apps.googleusercontent.com">
   </head>
   <body>
     <h1>gLandlord</h1>
@@ -11,18 +12,17 @@
     <p><a href="privacy-policy.html">Privacy Policy</a></p>
     <p><a href="terms-and-conditions.html">Terms & Conditions</a></p>
 
+	<div id="user_profile"></div>
     <!--Add buttons to initiate auth sequence and sign out-->
     <button id="authorize_button" style="display: none;">Authorize</button>
     <button id="signout_button" style="display: none;">Sign Out</button>
+    <!-- <button id="clear_button">Clear</button> -->
 
-    <pre id="content" style="white-space: pre-wrap;"></pre>
+    <textarea id="content" rows="15" style="white-space:nowrap;width:100%;margin-top:5px"></textarea>
 
     <script type="text/javascript">
       // Client ID and API key from the Developer Console
-/* 
-	    1099432178566-6pc0hpiu3f6acsr9erhe31nq82qgcktc.apps.googleusercontent.com
-	    HvkyozOFAgTZ-em_62gNcEBW
-*/
+
       var CLIENT_ID = "960134249629-mtcvqn233uaeuuvjg1qomkqf835fhdcp.apps.googleusercontent.com"
       var API_KEY = "AIzaSyDgzboqA5vBFTY5iPrGUOR6GyUzByLcvjo"
 
@@ -33,8 +33,12 @@
       // included, separated by spaces.
       var SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
 
-      var authorizeButton = document.getElementById('authorize_button');
-      var signoutButton = document.getElementById('signout_button');
+      var authorizeButton = document.getElementById('authorize_button')
+      var signoutButton = document.getElementById('signout_button')
+      var clearButton = document.getElementById('clear_button')
+	  var userProfileDiv = document.getElementById('user_profile')
+	  var contentTextArea = document.getElementById('content')
+	  var userProfile = {}
 
       /**
        *  On load, called to load the auth2 library and API client library.
@@ -72,12 +76,16 @@
        */
       function updateSigninStatus(isSignedIn) {
         if (isSignedIn) {
-          authorizeButton.style.display = 'none';
-          signoutButton.style.display = 'block';
-          listFiles();
+          authorizeButton.style.display = 'none'
+          signoutButton.style.display = 'block'
+		  showUser()
+          listFiles()
         } else {
-          authorizeButton.style.display = 'block';
-          signoutButton.style.display = 'none';
+          authorizeButton.style.display = 'block'
+          signoutButton.style.display = 'none'
+		  userProfileDiv.innerHTML = ""
+		  /* contentPre.innerHTML = "" */
+		  contentTextArea.value = ""
         }
       }
 
@@ -102,10 +110,21 @@
        * @param {string} message Text to be placed in pre element.
        */
       function appendPre(message) {
-        var pre = document.getElementById('content');
-        var textContent = document.createTextNode(message + '\n');
-        pre.appendChild(textContent);
+        /* var textContent = document.createTextNode(message + '\n')
+        contentPre.appendChild(textContent); */
+		contentTextArea.value += message + '\n'
       }
+      
+	  function showUser() {
+	    var gu = gapi.auth2.getAuthInstance().currentUser.get()
+	    /* username = gu.getBasicProfile().getGivenName() + ' ' + gu.getBasicProfile().getFamilyName() */
+		var up = userProfile
+		up.userId = gu.getBasicProfile().getId()	
+		up.username = gu.getBasicProfile().getName()
+		up.email = gu.getBasicProfile().getEmail()
+		up.imageUrl = gu.getBasicProfile().getImageUrl()
+		document.getElementById('user_profile').innerHTML = '<img src="' + up.imageUrl +'" style="border-radius:50%;width:50px;height:50px">' + up.username + ', ' + up.email
+	  }
 
       /**
        * Print files.
@@ -115,6 +134,8 @@
           'pageSize': 10,
           'fields': "nextPageToken, files(id, name)"
         }).then(function(response) {
+		  //contentPre.innerHTML = ""
+		  contentTextArea.value = ""
           appendPre('Files:');
           var files = response.result.files;
           if (files && files.length > 0) {
