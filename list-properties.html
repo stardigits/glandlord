@@ -1,188 +1,183 @@
 <!DOCTYPE html>
 <html>
+
   <head>
-    <title>gLandlord</title>
+    <title>gLandlord - List Properties</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="google-signin-client_id" content="960134249629-mtcvqn233uaeuuvjg1qomkqf835fhdcp.apps.googleusercontent.com">
+	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<style>
+	<style>
+body {
+  color: #2c3e50;
+  background: #ecf0f1;
+  padding: 0 1em 1em;
+}
+
+h1 {
+  margin: 0;
+  line-height: 2;
+  text-align: center;
+}
+
+h2 {
+  margin: 0 0 .5em;
+  font-weight: normal;
+}
+
+input.accordion {
+  position: absolute;
+  opacity: 0;
+  z-index: -1;
+}
+
+.row {
+  display: -webkit-box;
+  display: flex;
+}
+.row .col {
+  -webkit-box-flex: 1;
+  flex: 1;
+}
+.row .col:last-child {
+  margin-left: 1em;
+}
+
+/* Accordion styles */
+.tabs {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 4px -2px rgba(0, 0, 0, 0.5);
+}
+
+.tab {
+  width: 100%;
+  color: white;
+  overflow: hidden;
+}
+.tab-label {
+  display: -webkit-box;
+  display: flex;
+  -webkit-box-pack: justify;
+  justify-content: space-between;
+  padding: 1em;
+  background: #2c3e50;
+  font-weight: bold;
+  cursor: pointer;
+  /* Icon */
+}
+.tab-label:hover {
+  background: #1a252f;
+}
+.tab-label::after {
+  content: "\276F";
+  width: 1em;
+  height: 1em;
+  text-align: center;
+  -webkit-transition: all .35s;
+  transition: all .35s;
+}
+.tab-content {
+  max-height: 0;
+  padding: 0 1em;
+  color: #2c3e50;
+  background: white;
+  -webkit-transition: all .35s;
+  transition: all .35s;
+}
+.tab-close {
+  display: -webkit-box;
+  display: flex;
+  -webkit-box-pack: end;
+          justify-content: flex-end;
+  padding: 1em;
+  font-size: 0.75em;
+  background: #2c3e50;
+  cursor: pointer;
+}
+.tab-close:hover {
+  background: #1a252f;
+}
+
+input:checked + .tab-label {
+  background: #1a252f;
+}
+input:checked + .tab-label::after {
+  -webkit-transform: rotate(90deg);
+          transform: rotate(90deg);
+}
+input:checked ~ .tab-content {
+  max-height: 100vh;
+  padding: 1em;
+}
+
+	</style>
   </head>
+
   <body>
-    <h1>gLandlord</h1>
-    <p>App for managing your properties, rents, tenats by using google drive as the storage</p>
-    <p><a href="privacy-policy.html">Privacy Policy</a></p>
-    <p><a href="terms-and-conditions.html">Terms & Conditions</a></p>
-
-	<div id="user_profile"></div>
-    <!--Add buttons to initiate auth sequence and sign out-->
-    <button id="authorize_button" style="display: none;">Authorize</button>
-    <button id="signout_button" style="display: none;">Sign Out</button>
-    <!-- <button id="clear_button">Clear</button> -->
-
-    <textarea id="content" rows="15" style="white-space:nowrap;width:100%;margin-top:5px"></textarea>
-
-    <script type="text/javascript">
-      // Client ID and API key from the Developer Console
-
-      var CLIENT_ID = "960134249629-mtcvqn233uaeuuvjg1qomkqf835fhdcp.apps.googleusercontent.com"
-      var API_KEY = "AIzaSyDgzboqA5vBFTY5iPrGUOR6GyUzByLcvjo"
-
-      // Array of API discovery doc URLs for APIs used by the quickstart
-      var DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
-
-      // Authorization scopes required by the API; multiple scopes can be
-      // included, separated by spaces.
-      var SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
-
-      var authorizeButton = document.getElementById('authorize_button')
-      var signoutButton = document.getElementById('signout_button')
-      var clearButton = document.getElementById('clear_button')
-	  var userProfileDiv = document.getElementById('user_profile')
-	  var contentTextArea = document.getElementById('content')
-	  var userProfile = {}
-
-      /**
-       *  On load, called to load the auth2 library and API client library.
-       */
-      function handleClientLoad() {
-        gapi.load('client:auth2', initClient);
-      }
-
-      /**
-       *  Initializes the API client library and sets up sign-in state
-       *  listeners.
-       */
-      function initClient() {
-        gapi.client.init({
-          apiKey: API_KEY,
-          clientId: CLIENT_ID,
-          discoveryDocs: DISCOVERY_DOCS,
-          scope: SCOPES
-        }).then(function () {
-          // Listen for sign-in state changes.
-          gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-
-          // Handle the initial sign-in state.
-          updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-          authorizeButton.onclick = handleAuthClick;
-          signoutButton.onclick = handleSignoutClick;
-        }, function(error) {
-          appendPre(JSON.stringify(error, null, 2));
-        });
-      }
-
-      /**
-       *  Called when the signed in status changes, to update the UI
-       *  appropriately. After a sign-in, the API is called.
-       */
-      function updateSigninStatus(isSignedIn) {
-        if (isSignedIn) {
-          authorizeButton.style.display = 'none'
-          signoutButton.style.display = 'block'
-		  showUser()
-          listFiles()
-        } else {
-          authorizeButton.style.display = 'block'
-          signoutButton.style.display = 'none'
-		  userProfileDiv.innerHTML = ""
-		  /* contentPre.innerHTML = "" */
-		  contentTextArea.value = ""
-        }
-      }
-
-      /**
-       *  Sign in the user upon button click.
-       */
-      function handleAuthClick(event) {
-        gapi.auth2.getAuthInstance().signIn();
-      }
-
-      /**
-       *  Sign out the user upon button click.
-       */
-      function handleSignoutClick(event) {
-        gapi.auth2.getAuthInstance().signOut();
-      }
-
-      /**
-       * Append a pre element to the body containing the given message
-       * as its text node. Used to display the results of the API call.
-       *
-       * @param {string} message Text to be placed in pre element.
-       */
-      function appendPre(message) {
-        /* var textContent = document.createTextNode(message + '\n')
-        contentPre.appendChild(textContent); */
-		contentTextArea.value += message + '\n'
-      }
-      
-	  function showUser() {
-	    var gu = gapi.auth2.getAuthInstance().currentUser.get()
-	    /* username = gu.getBasicProfile().getGivenName() + ' ' + gu.getBasicProfile().getFamilyName() */
-		var up = userProfile
-		up.userId = gu.getBasicProfile().getId()	
-		up.username = gu.getBasicProfile().getName()
-		up.email = gu.getBasicProfile().getEmail()
-		up.imageUrl = gu.getBasicProfile().getImageUrl()
-		document.getElementById('user_profile').innerHTML = '<img src="' + up.imageUrl +'" style="border-radius:50%;width:50px;height:50px">' + up.username + ', ' + up.email
-	  }
-
-      /**
-       * Print files.
-       */
-      function listFiles() {
-        gapi.client.drive.files.list({
-          'pageSize': 10,
-          'fields': "nextPageToken, files(id, name)"
-        }).then(function(response) {
-		  //contentPre.innerHTML = ""
-		  contentTextArea.value = ""
-          appendPre('Files:');
-          var files = response.result.files;
-          if (files && files.length > 0) {
-            for (var i = 0; i < files.length; i++) {
-              var file = files[i];
-              appendPre(file.name + ' (' + file.id + ')');
-            }
-          } else {
-            appendPre('No files found.');
-          }
-        });
-      }
-	  
-	  /* Drive Create File */
-	  
-	  function createFile() {
-	    var fileContent = 'sample text'
-		var file = new Blob([fileContent], {type: 'text/plain'})
-		var metadata = {
-		  'name': 'sampleName',
-		  'mimeType': 'text/plain'
-		  /* 'parents': ['### folder ID ###'], // Folder ID at Google Drive */
-		}
-		
-		var accessToken = gapi.auth.getToken().access_token
-		var form = new FormData()
-		form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}))
-		form.append('file', file);
-		
-		var xhr = new XMLHttpRequest()
-		xhr.open('post', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id')
-		xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken)
-		xhr.responseType = 'json'
-		xhr.onload = () => {
-		  console.log(xhr.response.id)
-		}
-		xhr.send(form)
-      }
-
-    </script>
-
-    <script async defer src="https://apis.google.com/js/api.js"
-      onload="this.onload=function(){};handleClientLoad()"
-      onreadystatechange="if (this.readyState === 'complete') this.onload()">
-    </script>
+    <div id="app">
+	  <h1>gLandlord - List Properties</h1>
+	  <div>Number of Properties: {{ landlord.houses.length }}</div>
+  
+      <div class="tabs">
+	    <divhouse v-for="(house,index) in landlord.houses" :value="house.id" :index="index" :key="index"></divhouse>
+      </div>
 	
-	<script type="text/javascript">
+<!-- Pure CSS Accordion Example 
+<h3>Pure CSS Accordion <sup>2.0</sup></h3>
+<div class="row">
+  <div class="col">
+    <h2>Open <b>multiple</b></h2>
+    <div class="tabs">
+      <div class="tab">
+        <input class="input-accordion" type="checkbox" id="chck1">
+        <label class="tab-label" for="chck1">Item 1</label>
+        <div class="tab-content">
+          Lorem ipsum dolor sit amet consectetur, adipisicing elit. Ipsum, reiciendis!
+        </div>
+      </div>
+      <div class="tab">
+        <input class="input-accordion" type="checkbox" id="chck2">
+        <label class="tab-label" for="chck2">Item 2</label>
+        <div class="tab-content">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. A, in!
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <h2>Open <b>one</b></h2>
+    <div class="tabs">
+      <div class="tab">
+        <input class="input-accordion" type="radio" id="rd1" name="rd">
+        <label class="tab-label" for="rd1">Item 1</label>
+        <div class="tab-content">
+          Lorem, ipsum dolor sit amet consectetur adipisicing elit. Eos, facilis.
+        </div>
+      </div>
+      <div class="tab">
+        <input class="input-accordion" type="radio" id="rd2" name="rd">
+        <label class="tab-label" for="rd2">Item 2</label>
+        <div class="tab-content">
+          Lorem ipsum dolor, sit amet consectetur adipisicing elit. Nihil, aut.
+        </div>
+      </div>
+      <div class="tab">
+        <input class="input-accordion" type="radio" id="rd3" name="rd">
+        <label for="rd3" class="tab-close">Close others &times;</label>
+      </div>
+    </div>
+  </div>
+</div>
+-->
+
+      <h3>Add Property</h3>
+	  <input v-model="newPropertyId"><button v-on:click="addProperty()">Add Property</button>
+	  
+	</div> <!-- #app -->
+  </body>
+
+  <script type="text/javascript">
 	/* Model */
 	  var landlord = {}
 	  var landlord1 = 
@@ -439,5 +434,47 @@ var srisuci = {
   "version": "0.0.11"
 }
 	</script>
-  </body>
+	
+  <script type="text/javascript">
+    /* Model */
+	function updateLocalStorage() {
+	  localStorage.setItem("landlord",JSON.stringify(app.landlord))
+	}
+  </script>
+	
+
+  <script type="text/javascript">
+    Vue.component("divhouse", {
+	  props: ["value","index"],
+	  data() {
+	    return {
+		  internalValue: this.value,
+		  house: landlord1.houses[this.index]
+		}
+      },
+	  template: '<div class="tab"><input class="accordion" type="checkbox" :id="house.id"><label class="tab-label" :for="house.id">{{house.id}}</label><div class="tab-content">{{house}}</div></div>'
+    })
+    var app = new Vue({
+	  el: '#app',
+      data: {
+        message: 'Hello Vue!',
+		landlord: landlord1,
+		newPropertyId: ''
+      },
+	  methods: {
+	    addProperty: function () {
+		  if (this.newPropertyId) {
+		    var hs = this.landlord.houses
+			var ids = []
+			hs.forEach((val)=>{ids.push(val.id)})
+		    if (!ids.includes(this.newPropertyId)) { 
+			  hs.push({"id": this.newPropertyId})			  
+			} else { alert(this.newPropertyId + " is already assigned !") }
+		  }
+		}
+	  }
+    })
+  </script>
+
+	
 </html>
